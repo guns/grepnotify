@@ -1,0 +1,9 @@
+package: github.com/guns/scanfnotify
+import:
+- package: github.com/guns/golibs
+  repo: file:///home/guns/.local/pkg/go/src/github.com/guns/golibs/
+  vcs: git
+  subpackages:
+  - process
+- package: github.com/jessevdk/go-flags
+- package: github.com/kr/pretty
