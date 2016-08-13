@@ -17,7 +17,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const usagesummary = `[options] regexp replacement-format …`
+const usagesummary = `[options] regexp summary-template message-template …`
 
 type options struct {
 	Delay uint `short:"d" long:"delay" default:"0" description:"Polling delay per replacement in milliseconds"`

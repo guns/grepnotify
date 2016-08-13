@@ -17,55 +17,31 @@ type notification struct {
 }
 
 type replacement struct {
-	pat        regexp.Regexp
-	fmt        string
-	submatches int
-	args       []interface{} // for fmt.Sprintf
-	ch         chan notification
-	busy       int32
+	pat         regexp.Regexp
+	summaryTmpl string
+	bodyTmpl    string
+	ch          chan notification
+	busy        int32
 }
 
-var verbPattern = regexp.MustCompile(`%[^%]`)
-
 func parseReplacements(args []string, opts *options) ([]replacement, error) {
-	if len(args)&1 == 1 {
-		return nil, errors.New("arguments must come in pairs")
+	n := len(args)
+	if n%3 != 0 {
+		return nil, errors.New("arguments must be given in groups of three")
 	}
 
-	n := len(args)
-	reps := make([]replacement, n>>1)
+	reps := make([]replacement, n/3)
 
-	for i := 0; i < n; i += 2 {
+	for i := 0; i < n; i += 3 {
 		p, err := regexp.Compile(args[i])
 		if err != nil {
 			return nil, err
 		}
 
-		submatches := len(p.SubexpNames()) - 1
-		verbs := len(verbPattern.FindAllString(args[i+1], -1))
-
-		if submatches == 0 && verbs != 0 {
-			return nil, fmt.Errorf("`%v` has no submatches, but `%v` contains format verbs", p, args[i+1])
-		} else if verbs != submatches-1 {
-			s := "es"
-			if submatches == 1 {
-				s = ""
-			}
-			v := "s"
-			if verbs == 1 {
-				v = ""
-			}
-			return nil, fmt.Errorf(
-				"`%v` has %d submatch%s, but `%v` has %d verb%s, not %d",
-				p, submatches, s, args[i+1], verbs, v, submatches-1,
-			)
-		}
-
-		r := &reps[i>>1]
+		r := &reps[i/3]
 		r.pat = *p
-		r.fmt = args[i+1]
-		r.submatches = len(p.SubexpNames()) - 1
-		r.args = make([]interface{}, r.submatches-1)
+		r.summaryTmpl = args[i+1]
+		r.bodyTmpl = args[i+2]
 		r.ch = make(chan notification)
 		if opts.Delay == 0 {
 			r.busy = -1
@@ -78,7 +54,6 @@ func parseReplacements(args []string, opts *options) ([]replacement, error) {
 func scanReplacements(reps []replacement, s *bufio.Scanner) {
 	for s.Scan() {
 		line := s.Text()
-		var msg notification
 
 		for i := range reps {
 			r := &reps[i]
@@ -88,23 +63,14 @@ func scanReplacements(reps []replacement, s *bufio.Scanner) {
 				continue
 			}
 
-			if r.submatches == 0 {
-				if !r.pat.MatchString(line) {
-					continue
-				}
+			matches := r.pat.FindStringSubmatchIndex(line)
+			if matches == nil {
+				continue
+			}
 
-				msg = notification{r.fmt, line}
-			} else {
-				matches := r.pat.FindStringSubmatch(line)
-				if matches == nil {
-					continue
-				}
-
-				for i, m := range matches[2:] {
-					r.args[i] = m
-				}
-
-				msg = notification{matches[1], fmt.Sprintf(r.fmt, r.args...)}
+			msg := notification{
+				string(r.pat.ExpandString([]byte{}, r.summaryTmpl, line, matches)),
+				string(r.pat.ExpandString([]byte{}, r.bodyTmpl, line, matches)),
 			}
 
 			if r.busy == -1 {
