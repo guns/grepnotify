@@ -17,10 +17,32 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const usagesummary = `[options] regexp summary-template message-template …`
+const usagesummary = `[options] regexp summary-template message-template …
+
+Scan stdin and notify on matching messages. Includes rate-limiting to prevent
+notification floods.
+
+Example:
+
+  Notification on iptables events
+
+  # iptables --new-chain DROPOUTPUT
+  # iptables --append    DROPOUTPUT --jump LOG --log-prefix '[DROPOUTPUT] '
+  # iptables --append    DROPOUTPUT --jump DROP
+  # iptables --append    OUTPUT     --jump DROPOUTPUT
+
+  $ dmesg --follow --notime | scanfnotify --delay 1000 \
+      '^\[DROPOUTPUT\].*?OUT=(?P<out>\S*).*?.*?DST=(?P<dst>\S*).*?PROTO=(?P<proto>\S*).*?DPT=(?P<dpt>\S*)' \
+      'DROPOUTPUT' \
+      'to: ${dst} ${dpt}/${proto}\ndev: ${out}'
+
+Multiple rules can be defined by supplying subsequent argument triplets.
+
+See https://golang.org/pkg/regexp/#Regexp.Expand for documentation on
+regexp templates.`
 
 type options struct {
-	Delay uint `short:"d" long:"delay" default:"0" description:"Polling delay per replacement in milliseconds"`
+	Delay uint `short:"d" long:"delay" default:"0" description:"Polling delay (per replacement) in milliseconds"`
 }
 
 // func (opts *options) validate() error {
