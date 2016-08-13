@@ -91,12 +91,12 @@ func scanReplacements(reps []replacement, s *bufio.Scanner) {
 func notifyReplacement(rep *replacement, delay time.Duration) {
 	if rep.busy == -1 {
 		for line := range rep.ch {
-			notify(line)
+			go notify(line)
 		}
 	} else {
 		for line := range rep.ch {
 			atomic.StoreInt32(&rep.busy, 1)
-			notify(line)
+			go notify(line)
 			time.Sleep(delay) // rate limiting
 			atomic.StoreInt32(&rep.busy, 0)
 		}
