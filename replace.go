@@ -39,7 +39,7 @@ func parseReplacements(args []string, opts *options) ([]replacement, error) {
 		}
 
 		r := &reps[i/3]
-		r.pat = *p
+		r.pat = *p // vet: okay to copy here then discard
 		r.summaryTmpl = args[i+1]
 		r.bodyTmpl = args[i+2]
 		r.ch = make(chan notification)
