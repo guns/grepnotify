@@ -31,7 +31,7 @@ Example:
   # iptables --append    DROPOUTPUT --jump DROP
   # iptables --append    OUTPUT     --jump DROPOUTPUT
 
-  $ dmesg --follow --notime | scanfnotify --delay 1000 \
+  $ dmesg --follow --notime | grepnotify --delay 1000 \
       '^\[DROPOUTPUT\].*?OUT=(?P<out>\S*).*?.*?DST=(?P<dst>\S*).*?PROTO=(?P<proto>\S*).*?DPT=(?P<dpt>\S*)' \
       'DROPOUTPUT' \
       'to: ${dst} ${dpt}/${proto}\ndev: ${out}'

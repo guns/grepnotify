@@ -1,4 +1,4 @@
-package: github.com/guns/scanfnotify
+package: github.com/guns/grepnotify
 import:
 - package: github.com/guns/golibs
   repo: file:///home/guns/.local/pkg/go/src/github.com/guns/golibs/
