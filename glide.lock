@@ -1,16 +1,6 @@
-hash: 3b93f8cb223b4341fe3c6b46ffd9e50c0f741b1ebe7bd4da1b54f92216669915
-updated: 2016-08-12T19:49:22.567942624-05:00
+hash: ac8db2d81ff878f0529041f9439563d34b19be904b0284ef7b6dd399ca4a2d3f
+updated: 2016-08-23T21:56:08.825177584-05:00
 imports:
-- name: github.com/guns/golibs
-  version: d0393940487bae719922e3174f478b81e3ba1cc6
-  repo: file:///home/guns/.local/pkg/go/src/github.com/guns/golibs/
-  vcs: git
-  subpackages:
-  - process
 - name: github.com/jessevdk/go-flags
   version: f2785f5820ec967043de79c8be97edfc464ca745
-- name: github.com/kr/pretty
-  version: 737b74a46c4bf788349f72cb256fed10aea4d0ac
-- name: github.com/kr/text
-  version: 7cafcd837844e784b526369c9bce262804aebc60
-devImports: []
+testImports: []
