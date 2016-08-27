@@ -24,6 +24,12 @@ type replacement struct {
 	busy        int32
 }
 
+const (
+	never = -1
+	idle  = 0
+	busy  = 1
+)
+
 func parseReplacements(args []string, opts *options) ([]replacement, error) {
 	n := len(args)
 	if n%3 != 0 {
@@ -44,7 +50,7 @@ func parseReplacements(args []string, opts *options) ([]replacement, error) {
 		r.bodyTmpl = args[i+2]
 		r.ch = make(chan notification)
 		if opts.Delay == 0 {
-			r.busy = -1
+			r.busy = never
 		}
 	}
 
@@ -59,7 +65,7 @@ func scanReplacements(reps []replacement, s *bufio.Scanner) {
 			r := &reps[i]
 
 			// Try to avoid unnecessary work
-			if r.busy != -1 && atomic.LoadInt32(&r.busy) == 1 {
+			if r.busy != never && atomic.LoadInt32(&r.busy) == busy {
 				continue
 			}
 
@@ -73,7 +79,7 @@ func scanReplacements(reps []replacement, s *bufio.Scanner) {
 				string(r.pat.ExpandString([]byte{}, r.bodyTmpl, line, matches)),
 			}
 
-			if r.busy == -1 {
+			if r.busy == never {
 				r.ch <- msg
 			} else {
 				// Non-blocking
@@ -89,16 +95,16 @@ func scanReplacements(reps []replacement, s *bufio.Scanner) {
 }
 
 func notifyReplacement(rep *replacement, delay time.Duration) {
-	if rep.busy == -1 {
+	if rep.busy == never {
 		for line := range rep.ch {
 			go notify(line)
 		}
 	} else {
 		for line := range rep.ch {
-			atomic.StoreInt32(&rep.busy, 1)
+			atomic.StoreInt32(&rep.busy, busy)
 			go notify(line)
 			time.Sleep(delay) // rate limiting
-			atomic.StoreInt32(&rep.busy, 0)
+			atomic.StoreInt32(&rep.busy, idle)
 		}
 	}
 }
