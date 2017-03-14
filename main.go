@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Sung Pae <self@sungpae.com>
+ * Copyright (c) 2016-2017 Sung Pae <self@sungpae.com>
  * Distributed under the MIT license.
  * http://www.opensource.org/licenses/mit-license.php
  */
@@ -8,6 +8,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -17,7 +18,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const usagesummary = `[options] regexp summary-template message-template …
+const usage = `[options] regexp summary-template message-template …
 
 Scan stdin and notify on matching messages. Includes rate-limiting to prevent
 notification floods.
@@ -43,33 +44,31 @@ regexp templates.`
 
 type options struct {
 	Delay uint `short:"d" long:"delay" default:"0" description:"Polling delay (per replacement) in milliseconds"`
+	Help  bool `short:"h" long:"help"`
 }
 
-// func (opts *options) validate() error {
-// 	switch {
-// 	default:
-// 		return nil
-// 	}
-// }
+func validate(opts *options, args []string) error {
+	switch {
+	case len(args) == 0:
+		return errors.New("not enough arguments; see --help")
+	default:
+		return nil
+	}
+}
 
 func abort(err error) {
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err.Error()) // About to exit, ignore
+		fmt.Fprintln(os.Stderr, err.Error())
 	}
 	os.Exit(1)
 }
 
-func abortWithHelp(parser *flags.Parser) {
-	parser.WriteHelp(os.Stderr)
-	os.Exit(1)
-}
-
-func getopts(arguments []string) (parser *flags.Parser, opts *options, args []string) {
+func getopts(arguments []string) (opts *options, args []string) {
 	opts = new(options)
 	var err error
 
-	parser = flags.NewNamedParser(path.Base(arguments[0]), flags.HelpFlag|flags.PassDoubleDash)
-	parser.Usage = usagesummary
+	parser := flags.NewNamedParser(path.Base(arguments[0]), flags.PassDoubleDash)
+	parser.Usage = usage
 
 	if _, err = parser.AddGroup("Options", "", opts); err != nil {
 		abort(err)
@@ -79,19 +78,20 @@ func getopts(arguments []string) (parser *flags.Parser, opts *options, args []st
 		abort(err)
 	}
 
-	// if err = opts.validate(); err != nil {
-	// 	abort(err)
-	// }
+	if opts.Help {
+		parser.WriteHelp(os.Stderr)
+		os.Exit(0)
+	}
 
-	return parser, opts, args
+	if err = validate(opts, args); err != nil {
+		abort(err)
+	}
+
+	return opts, args
 }
 
 func main() {
-	parser, opts, args := getopts(os.Args)
-	if len(args) == 0 {
-		abortWithHelp(parser)
-	}
-
+	opts, args := getopts(os.Args)
 	reps, err := parseReplacements(args, opts)
 	if err != nil {
 		abort(err)
