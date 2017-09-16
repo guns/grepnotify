@@ -30,7 +30,7 @@ const (
 	busy  = 1
 )
 
-func parseReplacements(args []string, opts *options) ([]replacement, error) {
+func parseReplacements(args []string, delay time.Duration) ([]replacement, error) {
 	n := len(args)
 	if n%3 != 0 {
 		return nil, errors.New("arguments must be given in groups of three")
@@ -49,7 +49,7 @@ func parseReplacements(args []string, opts *options) ([]replacement, error) {
 		r.summaryTmpl = args[i+1]
 		r.bodyTmpl = args[i+2]
 		r.ch = make(chan notification)
-		if opts.Delay == 0 {
+		if delay == 0 {
 			r.busy = never
 		}
 	}
